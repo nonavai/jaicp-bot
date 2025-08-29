@@ -10,36 +10,74 @@ tests:
     - test/test_scenarios.xml
 
 nlp:
-  intentNoMatchThresholds:
-    phrases: 0.2
-    patterns: 0.2
-  
-  # Гибридный подход: правила + ИИ
-  classificationAlgorithm: "hybrid"
+  # МАКСИМАЛЬНОЕ ИСПОЛЬЗОВАНИЕ ИИ JAICP
+  classificationAlgorithm: "ai"  # Чистое ИИ вместо гибрида
   useShared: true
   
-  # Включение пользовательских паттернов
+  # ИИ анализ намерений
+  intentClassification: true
+  confidenceThreshold: 0.3  # Понижен для большей чувствительности
+  
+  # Максимальный семантический поиск
+  semanticSearch: true
+  semanticThreshold: 0.2  # Понижен для лучшего понимания
+  
+  # Включаем все доступные ИИ функции
+  entityExtraction: true
+  sentimentAnalysis: true
+  languageDetection: true
+  
+  # Настройки для неопознанных запросов
+  intentNoMatchThresholds:
+    phrases: 0.1  # Очень низкий порог - почти все идет в ИИ
+    patterns: 0.1
+  
+  # Пользовательские паттерны как fallback
   zflPatternsEnabled: true
   
-  # ИИ для определения намерений
-  intentClassification: true
-  confidenceThreshold: 0.6
+  # Обучение на лету
+  onlineLearning: true
+  adaptiveThreshold: true
   
-  # Семантический поиск
-  semanticSearch: true
-  
-  # Настройки валидации
+  # Валидация ответов ИИ
   validation:
-    phraseValidationEnabled: false  # Отключаем для правило-ориентированного подхода
+    phraseValidationEnabled: true
     answerValidationEnabled: true
-    phraseValidationThreshold: 0.5
-    answerValidationThreshold: 0.8
+    phraseValidationThreshold: 0.3
+    answerValidationThreshold: 0.6
+
+# ИИ обучение для автосервиса
+aiTraining:
+  domain: "automotive_service"
+  intents:
+    - name: "booking_intent"
+      examples:
+        - "записаться на ТО"
+        - "хочу записаться на техобслуживание"
+        - "мне нужно на сервис"
+        - "запиши меня на ремонт"
+        - "срочно нужна диагностика"
+        - "как записаться на техосмотр"
+        - "хочу попасть в автосервис"
+    - name: "pricing_intent"  
+      examples:
+        - "сколько стоит ТО"
+        - "какие цены на ремонт"
+        - "во сколько обойдется сервис"
+        - "цены на диагностику"
+        - "стоимость техобслуживания"
+    - name: "schedule_intent"
+      examples:
+        - "когда вы работаете"
+        - "часы работы автосервиса"  
+        - "расписание работы"
+        - "во сколько открываетесь"
 
 # Настройки для автосервиса
 bot:
   company: "АвтоПрофи"
   service: "Автосервис"
-  description: "Чат-бот для записи на техобслуживание и получения информации об услугах"
+  description: "ИИ чат-бот для записи на техобслуживание и получения информации об услугах"
   
 # Интеграция отключена - используем встроенное хранение JAICP
 # integration:
