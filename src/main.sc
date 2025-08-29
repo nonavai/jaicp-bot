@@ -1,103 +1,260 @@
-require: slotfilling/slotFilling.sc
-  module = sys.zb-common
-theme: /
+// Основной Script файл для автосервисного чат-бота
 
-    state: Start || sessionResult = "Сценарий начинается отсюда", sessionResultColor = "#143AD1"
-        q!: $regex</start>
-        image: https://248305.selcdn.ru/zfl_prod/64069/64072/Y6nDSc64tgJWac7N.png
-        a: Добрый день! Я виртуальный секретарь Компании. Могу уточнить статус вашего заказа или рассказать о времени работы офиса. || htmlEnabled = true, html = "Добрый день! Я виртуальный секретарь <b>Компании</b>. Могу уточнить статус вашего заказа или рассказать о времени работы офиса."
-        buttons:
-            "Статус заказа" -> /Статус заказа
-            "Часы работы" -> /Часы работы
-            "Оставить отзыв" -> /Отзыв о работе
-        intent: /Статус заказа || onlyThisState = false, toState = "/Статус заказа"
-        intent: /Часы работы || onlyThisState = false, toState = "/Часы работы"
-        intent: /Оставить отзыв || onlyThisState = false, toState = "/Отзыв о работе"
-        intent: /sys/ru/aimylogic/parting || onlyThisState = false, toState = "/Bye"
+// Инициализация сессии
+init: $session.bookingData = {};
 
-    state: Bye
-        a: Пока-пока!
-        EndSession:
-            actions = {}
+// Функция нормализации номера телефона
+function normalizePhone(rawPhone) {
+    // Убираем все символы кроме цифр
+    var digits = rawPhone.replace(/\D/g, '');
+    
+    // Нормализуем российский номер
+    if (digits.length === 10) {
+        return '+7' + digits;
+    } else if (digits.length === 11 && digits.startsWith('8')) {
+        return '+7' + digits.substring(1);
+    } else if (digits.length === 11 && digits.startsWith('7')) {
+        return '+' + digits;
+    } else if (digits.length === 11 && digits.startsWith('1')) {
+        return '+' + digits;
+    }
+    
+    return '+' + digits;
+}
 
-    state: NoMatch || sessionResult = "Тут обрабатываем непонятные запросы", sessionResultColor = "#3E8080"
-        event!: noMatch
-        a: Простите, я вас не поняла. Не могли бы вы уточнить вопрос? || html = "Простите, я вас не поняла. Не могли бы вы уточнить вопрос?"
-        go!: /Меню
+// Функция валидации имени
+function validateName(name) {
+    // Проверяем, что имя содержит минимум 2 слова
+    var words = name.trim().split(/\s+/);
+    if (words.length < 2) {
+        return false;
+    }
+    
+    // Проверяем, что каждое слово начинается с заглавной буквы
+    for (var i = 0; i < words.length; i++) {
+        if (!/^[А-Яа-яA-Za-z]/.test(words[i])) {
+            return false;
+        }
+    }
+    
+    return true;
+}
 
-    state: Статус заказа || sessionResult = "Статус заказа", sessionResultColor = "#7E47D1"
-        a: Скажите, пожалуйста, какой номер у вашего заказа? || htmlEnabled = false, html = "Скажите, пожалуйста, какой номер у вашего заказа?"
-        intent: /Номер заказа || onlyThisState = false, toState = "/Номер сохранен"
-        event: noMatch || onlyThisState = false, toState = "/Неправильный номер"
+// Функция валидации марки автомобиля
+function validateCarBrand(brand) {
+    // Проверяем, что марка не пустая и содержит только буквы и цифры
+    if (!brand || brand.trim().length === 0) {
+        return false;
+    }
+    
+    // Проверяем, что марка содержит только допустимые символы
+    if (!/^[А-Яа-яA-Za-z0-9\s\-]+$/.test(brand)) {
+        return false;
+    }
+    
+    return true;
+}
 
-    state: Часы работы || sessionResult = "Отвечаем про часы работы", sessionResultColor = "#15952F"
-        a: Мы работаем с 10 утра до 8 вечера по будням и с 11 до 17 в субботу. Воскресенье — выходной. || htmlEnabled = false, html = "Мы работаем с 10 утра до 8 вечера по будням и с 11 до 17 в субботу. Воскресенье — выходной."
-        go!: /Меню
+// Функция препроцессинга входящего текста
+function preprocessInput(text) {
+    // Проверяем длину
+    if (text.length > 400) {
+        return {
+            isValid: false,
+            error: "Слишком длинный запрос. Пожалуйста, сформулируйте короче."
+        };
+    }
+    
+    // Нормализуем пробелы
+    var normalized = text.replace(/\s+/g, ' ').trim();
+    
+    // Убираем мусорные символы
+    normalized = normalized.replace(/[^\w\s\-\(\)\+\.\,\!\?]/g, '');
+    
+    return {
+        isValid: true,
+        text: normalized
+    };
+}
 
-    state: Отзыв о работе || sessionResult = "Пример работы с системными интентами", sessionResultColor = "#FFFFFF"
-        a: Мы будем благодарны услышать ваш отзыв о работе. || htmlEnabled = false, html = "Мы будем благодарны услышать ваш отзыв о работе."
-        intent: /sys/aimylogic/ru/approval || onlyThisState = false, toState = "/Отзыв о работе/Спасибо за оценку"
-        intent: /sys/aimylogic/ru/insults || onlyThisState = false, toState = "/Отзыв о работе/Не хами"
-        intent: /sys/aimylogic/ru/negative || onlyThisState = false, toState = "/Отзыв о работе/Извиниться"
-        intent: /sys/aimylogic/ru/normal || onlyThisState = false, toState = "/Отзыв о работе/Будем стараться"
-        event: noMatch || onlyThisState = false, toState = "/Отзыв о работе/Сохранить отзыв"
+// Функция проверки достаточности параметров
+function checkParametersSufficiency(bookingData) {
+    var params = 0;
+    var missing = [];
+    
+    if (bookingData.name && validateName(bookingData.name)) {
+        params++;
+    } else {
+        missing.push('имя');
+    }
+    
+    if (bookingData.phone && bookingData.phone.length >= 10) {
+        params++;
+    } else {
+        missing.push('телефон');
+    }
+    
+    if (bookingData.brand && validateCarBrand(bookingData.brand)) {
+        params++;
+    } else {
+        missing.push('марка автомобиля');
+    }
+    
+    return {
+        sufficient: params >= 2,
+        count: params,
+        missing: missing
+    };
+}
 
-        state: Не хами
-            a: Пожалуйста, сдерживайте ваши эмоции! || htmlEnabled = false, html = "Пожалуйста, сдерживайте ваши эмоции!"
-            go!: /Меню
+// Функция отправки заявки на backend
+function sendBookingRequest(bookingData) {
+    // Здесь будет HTTP-запрос к backend
+    // Пока что просто возвращаем успех
+    
+    var requestData = {
+        userId: $session.userId || 'anonymous',
+        name: bookingData.name,
+        phone: normalizePhone(bookingData.phone),
+        brand: bookingData.brand,
+        timestamp: new Date().toISOString()
+    };
+    
+    // В реальном проекте здесь будет fetch или axios
+    console.log('Отправка заявки:', requestData);
+    
+    return {
+        success: true,
+        bookingId: 'BK' + Date.now(),
+        message: 'Заявка успешно отправлена'
+    };
+}
 
-        state: Будем стараться
-            a: Спасибо. В следующий раз мы постараемся быть лучше. || htmlEnabled = false, html = "Спасибо. В следующий раз мы постараемся быть лучше."
-            go!: /Меню
+// Обработчик входящего сообщения
+input: $text
+script:
+    // Препроцессинг входящего текста
+    var preprocessed = preprocessInput($text);
+    if (!preprocessed.isValid) {
+        $reactions.answer(preprocessed.error);
+        return;
+    }
+    
+    // Обновляем текст для дальнейшей обработки
+    $text = preprocessed.text;
+    
+    // Проверяем, есть ли активная сессия записи
+    if ($session.bookingData && Object.keys($session.bookingData).length > 0) {
+        // Если есть активная сессия, обрабатываем как часть процесса записи
+        handleBookingFlow($text);
+    } else {
+        // Обычная обработка запроса
+        handleRegularRequest($text);
+    }
 
-        state: Извиниться
-            a: Я сожалею, что мы доставили вам неудобства. От имени компании приношу вам свои извинения и обязательно передам вашу жалобу руководству. || htmlEnabled = false, html = "Я сожалею, что мы доставили вам неудобства. От имени компании приношу вам свои извинения и обязательно передам вашу жалобу руководству."
-            go!: /Меню
+// Функция обработки обычного запроса
+function handleRegularRequest(text) {
+    // Здесь будет логика определения интента
+    // Пока что просто отвечаем приветствием
+    $reactions.answer("Здравствуйте! Чем могу помочь?");
+}
 
-        state: Спасибо за оценку
-            a: Спасибо за высокую оценку! Мы рады стараться для вас! || htmlEnabled = false, html = "Спасибо за высокую оценку! Мы рады стараться для вас!"
-            go!: /Меню
+// Функция обработки процесса записи
+function handleBookingFlow(text) {
+    var currentData = $session.bookingData;
+    
+    // Пытаемся извлечь параметры из текста
+    var extracted = extractParameters(text);
+    
+    // Обновляем данные
+    if (extracted.name) currentData.name = extracted.name;
+    if (extracted.phone) currentData.phone = extracted.phone;
+    if (extracted.brand) currentData.brand = extracted.brand;
+    
+    // Проверяем достаточность параметров
+    var check = checkParametersSufficiency(currentData);
+    
+    if (check.sufficient) {
+        // Переходим к подтверждению
+        $reactions.transition("confirm_booking");
+    } else {
+        // Спрашиваем недостающий параметр
+        askMissingParameter(check.missing[0]);
+    }
+}
 
-        state: Сохранить отзыв || sessionResult = "Тут мы поместили работу с отзывом в подсценарий", sessionResultColor = "#143AD1"
-            a: Хорошо, я поняла. Ваш отзыв:
-                
-                {{$request.query}}
-                
-                Обязательно передам руководству! || htmlEnabled = true, html = "Хорошо, я поняла. Ваш отзыв: <br><br>{{$request.query}}  <br><br>Обязательно передам руководству!"
-            go!: /Меню
+// Функция извлечения параметров из текста
+function extractParameters(text) {
+    var result = {};
+    
+    // Извлекаем имя (простой паттерн)
+    var nameMatch = text.match(/([А-Яа-яA-Za-z]+ [А-Яа-яA-Za-z]+( [А-Яа-яA-Za-z]+)?)/);
+    if (nameMatch) {
+        result.name = nameMatch[1];
+    }
+    
+    // Извлекаем телефон
+    var phoneMatch = text.match(/(\+?[78]?[\d\-\s\(\)]{10,}|[\d\-\s\(\)]{10,})/);
+    if (phoneMatch) {
+        result.phone = phoneMatch[1];
+    }
+    
+    // Извлекаем марку автомобиля
+    var brandMatch = text.match(/(Skoda|Lada|Toyota|KIA|Hyundai|Volkswagen|BMW|Mercedes|Audi|Ford|Chevrolet|Nissan|Mazda|Honda|Renault|Peugeot|Citroen|Opel|Volvo|Lexus|Infiniti|Acura|Subaru|Mitsubishi|Suzuki|Daihatsu|Fiat|Alfa Romeo|Seat)/i);
+    if (brandMatch) {
+        result.brand = brandMatch[1];
+    }
+    
+    return result;
+}
 
-    state: Меню
-        a: Чем еще я могу вам помочь? || htmlEnabled = false, html = "Чем еще я могу вам помочь?"
-        buttons:
-            "Статус заказа" -> /Статус заказа
-            "Часы работы" -> /Часы работы
-            "Оставить отзыв" -> /Отзыв о работе
-        intent: /Статус заказа || onlyThisState = false, toState = "/Статус заказа"
-        intent: /Оставить отзыв || onlyThisState = false, toState = "/Отзыв о работе"
-        intent: /Часы работы || onlyThisState = false, toState = "/Часы работы"
-        intent: /sys/aimylogic/ru/parting || onlyThisState = false, toState = "/Bye"
+// Функция запроса недостающего параметра
+function askMissingParameter(paramType) {
+    switch(paramType) {
+        case 'имя':
+            $reactions.transition("ask_name");
+            break;
+        case 'телефон':
+            $reactions.transition("ask_phone");
+            break;
+        case 'марка автомобиля':
+            $reactions.transition("ask_car_brand");
+            break;
+        default:
+            $reactions.answer("Пожалуйста, уточните " + paramType);
+    }
+}
 
-    state: Номер сохранен || sessionResult = "Статус заказа", sessionResultColor = "#7E47D1"
-        a: Хорошо, записала: {{$request.query}}. Уточняю статус. || htmlEnabled = false, html = "Хорошо, записала: {{$request.query}}. Уточняю статус."
-        HttpRequest:
-            url = https://httpbin.org/get?query={{$request.query}}
-            method = GET
-            dataType = 
-            body = 
-            okState = /Получили данные
-            errorState = /Ошибка получения
-            timeout = 0
-            headers =
-            vars = [{"name":"orderStatus","value":"$httpResponse.args.query"}]
+// Обработчик подтверждения записи
+state: confirm_booking
+input: $text
+script:
+    // Проверяем, является ли это подтверждением
+    if (isConfirmation($text)) {
+        // Отправляем заявку
+        var result = sendBookingRequest($session.bookingData);
+        if (result.success) {
+            $reactions.transition("booking_success");
+        } else {
+            $reactions.transition("error_handling");
+        }
+    } else if (isNegation($text)) {
+        // Начинаем заново
+        $session.bookingData = {};
+        $reactions.answer("Хорошо, давайте начнем заново. Что вам нужно?");
+    } else {
+        // Просим уточнить
+        $reactions.answer("Пожалуйста, подтвердите или опровергните данные. Все верно?");
+    }
 
-    state: Ошибка получения || sessionResult = "Сервер недоступен", sessionResultColor = "#CD4C2B"
-        a: К сожалению, я никак не могу связаться с сервером. Попробуйте позже, пожалуйста. || htmlEnabled = false, html = "К сожалению, я никак не могу связаться с сервером. Попробуйте позже, пожалуйста."
-        go!: /Меню
+// Функция проверки подтверждения
+function isConfirmation(text) {
+    var confirmWords = ['да', 'конечно', 'разумеется', 'точно', 'именно', 'правильно', 'верно', 'ага', 'угу', 'подтверждаю', 'согласен', 'согласна'];
+    return confirmWords.some(word => text.toLowerCase().includes(word));
+}
 
-    state: Неправильный номер || sessionResult = "Статус заказа", sessionResultColor = "#7E47D1"
-        a: Это не похоже на номер заказа. || htmlEnabled = false, html = "Это не похоже на номер заказа."
-        go!: /Статус заказа
-
-    state: Получили данные || sessionResult = "Здесь надо будет научить бота обрабатывать ответ сервера", sessionResultColor = "#CD4C2B"
-        a: Кажется, я не поняла, что мне ответили. Научите меня разбираться с этим, пожалуйста :) || htmlEnabled = false, html = "Кажется, я не поняла, что мне ответили. Научите меня разбираться с этим, пожалуйста :)"
-        go!: /Меню
+// Функция проверки отрицания
+function isNegation(text) {
+    var negateWords = ['нет', 'неправильно', 'неверно', 'ошибка', 'не то', 'не так', 'изменить', 'исправить', 'заново'];
+    return negateWords.some(word => text.toLowerCase().includes(word));
+}

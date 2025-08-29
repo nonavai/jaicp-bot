@@ -1,0 +1,12 @@
+state: ask_car_brand
+  a: >
+    И последнее - какая у вас марка автомобиля?
+    
+    Укажите марку и модель, например:
+    • Toyota Camry
+    • Lada Granta
+    • KIA Rio
+    • BMW X5
+    • Mercedes C-Class
+    
+    Или просто марку, если не знаете модель.

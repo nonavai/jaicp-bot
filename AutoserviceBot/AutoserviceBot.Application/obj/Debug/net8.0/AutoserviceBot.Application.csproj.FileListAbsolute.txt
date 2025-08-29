@@ -1,0 +1,16 @@
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\bin\Debug\net8.0\AutoserviceBot.Application.deps.json
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\bin\Debug\net8.0\AutoserviceBot.Application.dll
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\bin\Debug\net8.0\AutoserviceBot.Application.pdb
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\bin\Debug\net8.0\AutoserviceBot.Domain.dll
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\bin\Debug\net8.0\AutoserviceBot.Domain.pdb
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\AutoserviceBot.Application.csproj.AssemblyReference.cache
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\AutoserviceBot.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\AutoserviceBot.Application.AssemblyInfoInputs.cache
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\AutoserviceBot.Application.AssemblyInfo.cs
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\AutoserviceBot.Application.csproj.CoreCompileInputs.cache
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\AutoserviceBot.Application.sourcelink.json
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\Autoserv.DC726D0C.Up2Date
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\AutoserviceBot.Application.dll
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\refint\AutoserviceBot.Application.dll
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\AutoserviceBot.Application.pdb
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Application\obj\Debug\net8.0\ref\AutoserviceBot.Application.dll

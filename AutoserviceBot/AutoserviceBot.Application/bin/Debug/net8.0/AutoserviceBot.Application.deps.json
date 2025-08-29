@@ -1,0 +1,36 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "AutoserviceBot.Application/1.0.0": {
+        "dependencies": {
+          "AutoserviceBot.Domain": "1.0.0"
+        },
+        "runtime": {
+          "AutoserviceBot.Application.dll": {}
+        }
+      },
+      "AutoserviceBot.Domain/1.0.0": {
+        "runtime": {
+          "AutoserviceBot.Domain.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "AutoserviceBot.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AutoserviceBot.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

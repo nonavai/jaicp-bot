@@ -1,4 +1,4 @@
-name: zb-jgraph-cailapub
+name: autoservice-bot
 
 entryPoint: main.sc
 
@@ -7,9 +7,37 @@ language: ru
 
 tests:
   include:
-    - test.xml
+    - test/test_scenarios.xml
 
 nlp:
   intentNoMatchThresholds:
     phrases: 0.2
     patterns: 0.2
+  
+  # Настройки для правило-ориентированного подхода
+  classificationAlgorithm: "sts"
+  useShared: false
+  
+  # Включение пользовательских паттернов
+  zflPatternsEnabled: true
+  
+  # Настройки валидации
+  validation:
+    phraseValidationEnabled: false  # Отключаем для правило-ориентированного подхода
+    answerValidationEnabled: true
+    phraseValidationThreshold: 0.5
+    answerValidationThreshold: 0.8
+
+# Настройки для автосервиса
+bot:
+  company: "АвтоПрофи"
+  service: "Автосервис"
+  description: "Чат-бот для записи на техобслуживание и получения информации об услугах"
+  
+# Настройки интеграции
+integration:
+  webhook:
+    enabled: true
+    url: "http://localhost:5000/api/booking"
+    timeout: 30
+    retries: 3

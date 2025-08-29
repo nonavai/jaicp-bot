@@ -1,0 +1,12 @@
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\bin\Debug\net8.0\AutoserviceBot.Domain.deps.json
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\bin\Debug\net8.0\AutoserviceBot.Domain.dll
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\bin\Debug\net8.0\AutoserviceBot.Domain.pdb
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\obj\Debug\net8.0\AutoserviceBot.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\obj\Debug\net8.0\AutoserviceBot.Domain.AssemblyInfoInputs.cache
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\obj\Debug\net8.0\AutoserviceBot.Domain.AssemblyInfo.cs
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\obj\Debug\net8.0\AutoserviceBot.Domain.csproj.CoreCompileInputs.cache
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\obj\Debug\net8.0\AutoserviceBot.Domain.sourcelink.json
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\obj\Debug\net8.0\AutoserviceBot.Domain.dll
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\obj\Debug\net8.0\refint\AutoserviceBot.Domain.dll
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\obj\Debug\net8.0\AutoserviceBot.Domain.pdb
+C:\rider\c#projects\ChatBot\jaicp-bot\AutoserviceBot\AutoserviceBot.Domain\obj\Debug\net8.0\ref\AutoserviceBot.Domain.dll
