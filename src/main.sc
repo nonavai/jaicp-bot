@@ -1,7 +1,11 @@
 // Основной Script файл для автосервисного чат-бота
 
-// Инициализация сессии
-init: $session.bookingData = {};
+// Инициализация сессии и глобального хранилища
+init:
+  $session.bookingData = {};
+  if (!$global.bookings) {
+    $global.bookings = [];
+  }
 
 // Функция нормализации номера телефона
 function normalizePhone(rawPhone) {
@@ -107,27 +111,73 @@ function checkParametersSufficiency(bookingData) {
     };
 }
 
-// Функция отправки заявки на backend
+// Функция сохранения заявки в JAICP storage
 function sendBookingRequest(bookingData) {
-    // Здесь будет HTTP-запрос к backend
-    // Пока что просто возвращаем успех
-    
-    var requestData = {
+    // Генерируем уникальный ID
+    var bookingId = 'BK' + Date.now();
+
+    // Создаем объект заявки
+    var booking = {
+        id: bookingId,
         userId: $session.userId || 'anonymous',
         name: bookingData.name,
         phone: normalizePhone(bookingData.phone),
         brand: bookingData.brand,
-        timestamp: new Date().toISOString()
+        status: 'new',
+        createdAt: new Date().toISOString(),
+        confirmedAt: null,
+        processedAt: null
     };
-    
-    // В реальном проекте здесь будет fetch или axios
-    console.log('Отправка заявки:', requestData);
-    
+
+    // Сохраняем в глобальном хранилище JAICP
+    $global.bookings.push(booking);
+
+    console.log('Заявка сохранена в JAICP storage:', booking);
+
     return {
         success: true,
-        bookingId: 'BK' + Date.now(),
-        message: 'Заявка успешно отправлена'
+        bookingId: bookingId,
+        message: 'Заявка успешно сохранена в системе'
     };
+}
+
+// Функция получения заявок пользователя
+function getUserBookings(userId) {
+    if (!$global.bookings) {
+        return [];
+    }
+    return $global.bookings.filter(function(booking) {
+        return booking.userId === userId;
+    });
+}
+
+// Функция получения всех заявок (для администратора)
+function getAllBookings() {
+    return $global.bookings || [];
+}
+
+// Функция обновления статуса заявки
+function updateBookingStatus(bookingId, newStatus) {
+    if (!$global.bookings) {
+        return null;
+    }
+
+    for (var i = 0; i < $global.bookings.length; i++) {
+        if ($global.bookings[i].id === bookingId) {
+            $global.bookings[i].status = newStatus;
+
+            // Обновляем timestamp в зависимости от статуса
+            if (newStatus === 'confirmed') {
+                $global.bookings[i].confirmedAt = new Date().toISOString();
+            } else if (newStatus === 'in_progress') {
+                $global.bookings[i].processedAt = new Date().toISOString();
+            }
+
+            return $global.bookings[i];
+        }
+    }
+
+    return null;
 }
 
 // Обработчик входящего сообщения
@@ -231,9 +281,11 @@ input: $text
 script:
     // Проверяем, является ли это подтверждением
     if (isConfirmation($text)) {
-        // Отправляем заявку
+        // Сохраняем заявку в JAICP storage
         var result = sendBookingRequest($session.bookingData);
         if (result.success) {
+            // Сохраняем ID заявки для отображения
+            $session.lastBookingId = result.bookingId;
             $reactions.transition("booking_success");
         } else {
             $reactions.transition("error_handling");

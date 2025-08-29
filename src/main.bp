@@ -170,46 +170,33 @@ state: process_confirmation
 
 # Состояние отправки заявки
 state: send_booking_request
-  httpAction:
-    url: "http://localhost:5000/api/booking"
-    method: "POST"
-    body: >
-      {
-        "userId": "{{ $userId }}",
-        "name": "{{ $session.bookingData.name }}",
-        "phone": "{{ $session.bookingData.phone }}",
-        "carBrand": "{{ $session.bookingData.brand }}",
-        "timestamp": "{{ new Date().toISOString() }}"
-      }
-    headers:
-      Content-Type: "application/json"
-    success:
-      # Обрабатываем успешный ответ
-      script:
-        var response = JSON.parse($httpResponse);
-        if (response.success) {
-          $reactions.transition("booking_success");
-        } else {
-          $reactions.transition("error_handling");
-        }
-    error:
-      # Обрабатываем ошибку
+  script:
+    # Сохраняем заявку в JAICP storage
+    var result = sendBookingRequest($session.bookingData);
+    if (result.success) {
+      $reactions.transition("booking_success");
+    } else {
       $reactions.transition("error_handling");
+    }
 
 # Состояние успешной записи
 state: booking_success
   a: >
     ✅ Заявка на техобслуживание успешно оформлена!
-    
+
+    🆔 Номер заявки: {{ $session.lastBookingId }}
+
     📋 Ваши данные:
     👤 Имя: {{ $session.bookingData.name }}
     📱 Телефон: {{ $session.bookingData.phone }}
     🚗 Автомобиль: {{ $session.bookingData.brand }}
-    
+
     📞 Наш сотрудник свяжется с вами в ближайшее время для уточнения деталей и согласования времени.
-    
+
     🕐 Обычно мы перезваниваем в течение 1-2 часов в рабочее время.
-    
+
+    💡 Сохраните номер заявки {{ $session.lastBookingId }} для справок.
+
     Есть ли еще вопросы?
 
 # Состояние обработки ошибки
@@ -221,15 +208,43 @@ state: error_handling
     
     Чем еще могу помочь?
 
+# Состояние просмотра заявок
+state: view_bookings
+  q: * (мои заявки|посмотреть заявки|статус заявки|мои записи) *
+  script:
+    var userBookings = getUserBookings($session.userId || 'anonymous');
+    if (userBookings.length === 0) {
+      $reactions.answer("У вас пока нет активных заявок. Хотите записаться на техобслуживание?");
+    } else {
+      var message = "📋 Ваши заявки:\n\n";
+      for (var i = 0; i < userBookings.length; i++) {
+        var booking = userBookings[i];
+        var statusText = "";
+        switch(booking.status) {
+          case 'new': statusText = "🆕 Новая"; break;
+          case 'confirmed': statusText = "✅ Подтверждена"; break;
+          case 'in_progress': statusText = "🔧 В работе"; break;
+          case 'completed': statusText = "✅ Завершена"; break;
+          default: statusText = booking.status;
+        }
+        message += "🆔 " + booking.id + "\n";
+        message += "🚗 " + booking.brand + "\n";
+        message += "📅 " + new Date(booking.createdAt).toLocaleDateString('ru-RU') + "\n";
+        message += "📊 " + statusText + "\n\n";
+      }
+      $reactions.answer(message + "Есть ли еще вопросы?");
+    }
+
 # Состояние по умолчанию (fallback)
 state: default
   a: >
     Извините, я не совсем понял ваш запрос.
-    
+
     Я могу помочь вам:
     • Записаться на техобслуживание
+    • Посмотреть статус моих заявок
     • Узнать цены на услуги
     • Узнать часы работы
     • Получить консультацию
-    
+
     Пожалуйста, сформулируйте ваш вопрос более конкретно.

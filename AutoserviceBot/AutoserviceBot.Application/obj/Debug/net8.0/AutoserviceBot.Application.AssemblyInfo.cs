@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AutoserviceBot.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8c783c314b73facf66d6735e1fe662b293f8060e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6911bb33f1e2819b60cb476fb323bca2e01695f1")]
 [assembly: System.Reflection.AssemblyProductAttribute("AutoserviceBot.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AutoserviceBot.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

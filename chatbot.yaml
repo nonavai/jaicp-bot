@@ -34,10 +34,7 @@ bot:
   service: "Автосервис"
   description: "Чат-бот для записи на техобслуживание и получения информации об услугах"
   
-# Настройки интеграции
-integration:
-  webhook:
-    enabled: true
-    url: "http://localhost:5000/api/booking"
-    timeout: 30
-    retries: 3
+# Интеграция отключена - используем встроенное хранение JAICP
+# integration:
+#   webhook:
+#     enabled: false
