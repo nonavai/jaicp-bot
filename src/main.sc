@@ -1,122 +1,94 @@
-// Основной Script файл для автосервисного чат-бота
+theme: /
 
-// Инициализация сессии и глобального хранилища
 init:
-  $session.bookingData = {};
+  $session.bookingData = {}
   if (!$global.bookings) {
-    $global.bookings = [];
+    $global.bookings = []
   }
 
-// Функция нормализации номера телефона
 function normalizePhone(rawPhone) {
-    // Убираем все символы кроме цифр
-    var digits = rawPhone.replace(/\D/g, '');
-    
-    // Нормализуем российский номер
+    var digits = rawPhone.replace(/\D/g, '')
     if (digits.length === 10) {
-        return '+7' + digits;
+        return '+7' + digits
     } else if (digits.length === 11 && digits.startsWith('8')) {
-        return '+7' + digits.substring(1);
+        return '+7' + digits.substring(1)
     } else if (digits.length === 11 && digits.startsWith('7')) {
-        return '+' + digits;
+        return '+' + digits
     } else if (digits.length === 11 && digits.startsWith('1')) {
-        return '+' + digits;
+        return '+' + digits
     }
-    
-    return '+' + digits;
+    return '+' + digits
 }
 
-// Функция валидации имени
 function validateName(name) {
-    // Проверяем, что имя содержит минимум 2 слова
-    var words = name.trim().split(/\s+/);
+    var words = name.trim().split(/\s+/)
     if (words.length < 2) {
-        return false;
+        return false
     }
-    
-    // Проверяем, что каждое слово начинается с заглавной буквы
     for (var i = 0; i < words.length; i++) {
         if (!/^[А-Яа-яA-Za-z]/.test(words[i])) {
-            return false;
+            return false
         }
     }
-    
-    return true;
+    return true
 }
 
-// Функция валидации марки автомобиля
 function validateCarBrand(brand) {
-    // Проверяем, что марка не пустая и содержит только буквы и цифры
     if (!brand || brand.trim().length === 0) {
-        return false;
+        return false
     }
-    
-    // Проверяем, что марка содержит только допустимые символы
     if (!/^[А-Яа-яA-Za-z0-9\s\-]+$/.test(brand)) {
-        return false;
+        return false
     }
-    
-    return true;
+    return true
 }
 
-// Функция препроцессинга входящего текста
 function preprocessInput(text) {
-    // Проверяем длину
     if (text.length > 400) {
         return {
             isValid: false,
             error: "Слишком длинный запрос. Пожалуйста, сформулируйте короче."
-        };
+        }
     }
-    
-    // Нормализуем пробелы
-    var normalized = text.replace(/\s+/g, ' ').trim();
-    
-    // Убираем мусорные символы
-    normalized = normalized.replace(/[^\w\s\-\(\)\+\.\,\!\?]/g, '');
-    
+    var normalized = text.replace(/\s+/g, ' ').trim()
+    normalized = normalized.replace(/[^\w\s\-\(\)\+\.\,\!\?]/g, '')
     return {
         isValid: true,
         text: normalized
-    };
+    }
 }
 
-// Функция проверки достаточности параметров
 function checkParametersSufficiency(bookingData) {
-    var params = 0;
-    var missing = [];
-    
+    var params = 0
+    var missing = []
+
     if (bookingData.name && validateName(bookingData.name)) {
-        params++;
+        params++
     } else {
-        missing.push('имя');
+        missing.push('имя')
     }
-    
+
     if (bookingData.phone && bookingData.phone.length >= 10) {
-        params++;
+        params++
     } else {
-        missing.push('телефон');
+        missing.push('телефон')
     }
-    
+
     if (bookingData.brand && validateCarBrand(bookingData.brand)) {
-        params++;
+        params++
     } else {
-        missing.push('марка автомобиля');
+        missing.push('марка автомобиля')
     }
-    
+
     return {
         sufficient: params >= 2,
         count: params,
         missing: missing
-    };
+    }
 }
 
-// Функция сохранения заявки в JAICP storage
 function sendBookingRequest(bookingData) {
-    // Генерируем уникальный ID
-    var bookingId = 'BK' + Date.now();
-
-    // Создаем объект заявки
+    var bookingId = 'BK' + Date.now()
     var booking = {
         id: bookingId,
         userId: $session.userId || 'anonymous',
@@ -127,186 +99,135 @@ function sendBookingRequest(bookingData) {
         createdAt: new Date().toISOString(),
         confirmedAt: null,
         processedAt: null
-    };
-
-    // Сохраняем в глобальном хранилище JAICP
-    $global.bookings.push(booking);
-
-    console.log('Заявка сохранена в JAICP storage:', booking);
-
+    }
+    $global.bookings.push(booking)
     return {
         success: true,
         bookingId: bookingId,
         message: 'Заявка успешно сохранена в системе'
-    };
+    }
 }
 
-// Функция получения заявок пользователя
 function getUserBookings(userId) {
     if (!$global.bookings) {
-        return [];
+        return []
     }
     return $global.bookings.filter(function(booking) {
-        return booking.userId === userId;
-    });
+        return booking.userId === userId
+    })
 }
 
-// Функция получения всех заявок (для администратора)
 function getAllBookings() {
-    return $global.bookings || [];
+    return $global.bookings || []
 }
 
-// Функция обновления статуса заявки
 function updateBookingStatus(bookingId, newStatus) {
     if (!$global.bookings) {
-        return null;
+        return null
     }
-
     for (var i = 0; i < $global.bookings.length; i++) {
         if ($global.bookings[i].id === bookingId) {
-            $global.bookings[i].status = newStatus;
-
-            // Обновляем timestamp в зависимости от статуса
+            $global.bookings[i].status = newStatus
             if (newStatus === 'confirmed') {
-                $global.bookings[i].confirmedAt = new Date().toISOString();
+                $global.bookings[i].confirmedAt = new Date().toISOString()
             } else if (newStatus === 'in_progress') {
-                $global.bookings[i].processedAt = new Date().toISOString();
+                $global.bookings[i].processedAt = new Date().toISOString()
             }
-
-            return $global.bookings[i];
+            return $global.bookings[i]
         }
     }
-
-    return null;
+    return null
 }
 
-// Обработчик входящего сообщения
 input: $text
 script:
-    // Препроцессинг входящего текста
-    var preprocessed = preprocessInput($text);
+    var preprocessed = preprocessInput($text)
     if (!preprocessed.isValid) {
-        $reactions.answer(preprocessed.error);
-        return;
+        $reactions.answer(preprocessed.error)
+        return
     }
-    
-    // Обновляем текст для дальнейшей обработки
-    $text = preprocessed.text;
-    
-    // Проверяем, есть ли активная сессия записи
+    $text = preprocessed.text
     if ($session.bookingData && Object.keys($session.bookingData).length > 0) {
-        // Если есть активная сессия, обрабатываем как часть процесса записи
-        handleBookingFlow($text);
+        handleBookingFlow($text)
     } else {
-        // Обычная обработка запроса
-        handleRegularRequest($text);
+        handleRegularRequest($text)
     }
 
-// Функция обработки обычного запроса
 function handleRegularRequest(text) {
-    // Здесь будет логика определения интента
-    // Пока что просто отвечаем приветствием
-    $reactions.answer("Здравствуйте! Чем могу помочь?");
+    $reactions.answer("Здравствуйте! Чем могу помочь?")
 }
 
-// Функция обработки процесса записи
 function handleBookingFlow(text) {
-    var currentData = $session.bookingData;
-    
-    // Пытаемся извлечь параметры из текста
-    var extracted = extractParameters(text);
-    
-    // Обновляем данные
-    if (extracted.name) currentData.name = extracted.name;
-    if (extracted.phone) currentData.phone = extracted.phone;
-    if (extracted.brand) currentData.brand = extracted.brand;
-    
-    // Проверяем достаточность параметров
-    var check = checkParametersSufficiency(currentData);
-    
+    var currentData = $session.bookingData
+    var extracted = extractParameters(text)
+    if (extracted.name) currentData.name = extracted.name
+    if (extracted.phone) currentData.phone = extracted.phone
+    if (extracted.brand) currentData.brand = extracted.brand
+    var check = checkParametersSufficiency(currentData)
     if (check.sufficient) {
-        // Переходим к подтверждению
-        $reactions.transition("confirm_booking");
+        $reactions.transition("confirm_booking")
     } else {
-        // Спрашиваем недостающий параметр
-        askMissingParameter(check.missing[0]);
+        askMissingParameter(check.missing[0])
     }
 }
 
-// Функция извлечения параметров из текста
 function extractParameters(text) {
-    var result = {};
-    
-    // Извлекаем имя (простой паттерн)
-    var nameMatch = text.match(/([А-Яа-яA-Za-z]+ [А-Яа-яA-Za-z]+( [А-Яа-яA-Za-z]+)?)/);
+    var result = {}
+    var nameMatch = text.match(/([А-Яа-яA-Za-z]+ [А-Яа-яA-Za-z]+( [А-Яа-яA-Za-z]+)?)/)
     if (nameMatch) {
-        result.name = nameMatch[1];
+        result.name = nameMatch[1]
     }
-    
-    // Извлекаем телефон
-    var phoneMatch = text.match(/(\+?[78]?[\d\-\s\(\)]{10,}|[\d\-\s\(\)]{10,})/);
+    var phoneMatch = text.match(/(\+?[78]?[\d\-\s\(\)]{10,}|[\d\-\s\(\)]{10,})/)
     if (phoneMatch) {
-        result.phone = phoneMatch[1];
+        result.phone = phoneMatch[1]
     }
-    
-    // Извлекаем марку автомобиля
-    var brandMatch = text.match(/(Skoda|Lada|Toyota|KIA|Hyundai|Volkswagen|BMW|Mercedes|Audi|Ford|Chevrolet|Nissan|Mazda|Honda|Renault|Peugeot|Citroen|Opel|Volvo|Lexus|Infiniti|Acura|Subaru|Mitsubishi|Suzuki|Daihatsu|Fiat|Alfa Romeo|Seat)/i);
+    var brandMatch = text.match(/(Skoda|Lada|Toyota|KIA|Hyundai|Volkswagen|BMW|Mercedes|Audi|Ford|Chevrolet|Nissan|Mazda|Honda|Renault|Peugeot|Citroen|Opel|Volvo|Lexus|Infiniti|Acura|Subaru|Mitsubishi|Suzuki|Daihatsu|Fiat|Alfa Romeo|Seat)/i)
     if (brandMatch) {
-        result.brand = brandMatch[1];
+        result.brand = brandMatch[1]
     }
-    
-    return result;
+    return result
 }
 
-// Функция запроса недостающего параметра
 function askMissingParameter(paramType) {
     switch(paramType) {
         case 'имя':
-            $reactions.transition("ask_name");
-            break;
+            $reactions.transition("ask_name")
+            break
         case 'телефон':
-            $reactions.transition("ask_phone");
-            break;
+            $reactions.transition("ask_phone")
+            break
         case 'марка автомобиля':
-            $reactions.transition("ask_car_brand");
-            break;
+            $reactions.transition("ask_car_brand")
+            break
         default:
-            $reactions.answer("Пожалуйста, уточните " + paramType);
+            $reactions.answer("Пожалуйста, уточните " + paramType)
     }
 }
 
-// Обработчик подтверждения записи
 state: confirm_booking
-input: $text
-script:
-    // Проверяем, является ли это подтверждением
-    if (isConfirmation($text)) {
-        // Сохраняем заявку в JAICP storage
-        var result = sendBookingRequest($session.bookingData);
-        if (result.success) {
-            // Сохраняем ID заявки для отображения
-            $session.lastBookingId = result.bookingId;
-            $reactions.transition("booking_success");
+    input: $text
+    script:
+        if (isConfirmation($text)) {
+            var result = sendBookingRequest($session.bookingData)
+            if (result.success) {
+                $session.lastBookingId = result.bookingId
+                $reactions.transition("booking_success")
+            } else {
+                $reactions.transition("error_handling")
+            }
+        } else if (isNegation($text)) {
+            $session.bookingData = {}
+            $reactions.answer("Хорошо, давайте начнем заново. Что вам нужно?")
         } else {
-            $reactions.transition("error_handling");
+            $reactions.answer("Пожалуйста, подтвердите или опровергните данные. Все верно?")
         }
-    } else if (isNegation($text)) {
-        // Начинаем заново
-        $session.bookingData = {};
-        $reactions.answer("Хорошо, давайте начнем заново. Что вам нужно?");
-    } else {
-        // Просим уточнить
-        $reactions.answer("Пожалуйста, подтвердите или опровергните данные. Все верно?");
-    }
 
-// Функция проверки подтверждения
 function isConfirmation(text) {
-    var confirmWords = ['да', 'конечно', 'разумеется', 'точно', 'именно', 'правильно', 'верно', 'ага', 'угу', 'подтверждаю', 'согласен', 'согласна'];
-    return confirmWords.some(word => text.toLowerCase().includes(word));
+    var confirmWords = ['да', 'конечно', 'разумеется', 'точно', 'именно', 'правильно', 'верно', 'ага', 'угу', 'подтверждаю', 'согласен', 'согласна']
+    return confirmWords.some(word => text.toLowerCase().includes(word))
 }
 
-// Функция проверки отрицания
 function isNegation(text) {
-    var negateWords = ['нет', 'неправильно', 'неверно', 'ошибка', 'не то', 'не так', 'изменить', 'исправить', 'заново'];
-    return negateWords.some(word => text.toLowerCase().includes(word));
+    var negateWords = ['нет', 'неправильно', 'неверно', 'ошибка', 'не то', 'не так', 'изменить', 'исправить', 'заново']
+    return negateWords.some(word => text.toLowerCase().includes(word))
 }
