@@ -1,153 +1,262 @@
 theme: /
 
-    state: greeting
-        q: q:greeting
-        a: Здравствуйте! Добро пожаловать в автосервис АвтоПрофи!
-        script:
-            $session.bookingData = {}
-            if (!$global.bookings) {
-                $global.bookings = []
-            }
+init:
+    script:
+        if (!$global.bookings) {
+            $global.bookings = []
+        }
+        if (!$global.bookingCounter) {
+            $global.bookingCounter = 1000
+        }
 
-    state: farewell
-        q: q:farewell
-        a: Спасибо за обращение! До свидания!
+state: greeting
+    q: q:greeting
+    a: Здравствуйте! Добро пожаловать в автосервис АвтоПрофи! Я помогу записаться на техобслуживание.
+    script:
+        $session.bookingData = {}
 
-    state: working_hours
-        q: q:working_hours
-        a: Часы работы: Понедельник-Пятница 8:00-20:00
+state: farewell
+    q: q:farewell
+    a: Спасибо за обращение! До свидания!
 
-    state: price_inquiry
-        q: q:price_inquiry
-        a: Цены: Компактные автомобили от 2500руб
+state: working_hours
+    q: q:working_hours
+    a: Часы работы автосервиса АвтоПрофи: Понедельник-Пятница 8:00-20:00, Суббота 9:00-18:00. Воскресенье - выходной.
 
-    state: service_booking
-        q: q:service_booking
-        script:
-            var params = 0
-            if ($parseTree._name) params++
-            if ($parseTree._phone) params++
-            if ($parseTree._brand) params++
+state: price_inquiry
+    q: q:price_inquiry
+    a: Цены на техобслуживание: Компактные автомобили от 2500руб, Среднеразмерные от 3500руб, Полноразмерные от 4500руб.
 
-            if (params >= 2) {
-                $session.bookingData = {
-                    name: $parseTree._name || $session.bookingData.name,
-                    phone: $parseTree._phone || $session.bookingData.phone,
-                    brand: $parseTree._brand || $session.bookingData.brand
-                }
-                $reactions.transition("confirm_booking")
-            } else {
-                if ($parseTree._name) $session.bookingData.name = $parseTree._name
-                if ($parseTree._phone) $session.bookingData.phone = $parseTree._phone
-                if ($parseTree._brand) $session.bookingData.brand = $parseTree._brand
-
-                if (!$session.bookingData.name) {
-                    $reactions.transition("ask_name")
-                } else if (!$session.bookingData.phone) {
-                    $reactions.transition("ask_phone")
-                } else if (!$session.bookingData.brand) {
-                    $reactions.transition("ask_car_brand")
-                }
-            }
-
-    state: ask_name
-        q: * @FullName *
-        script:
-            $session.bookingData.name = $parseTree._name
-            if (!$session.bookingData.phone) {
-                $reactions.transition("ask_phone")
-            } else if (!$session.bookingData.brand) {
-                $reactions.transition("ask_car_brand")
-            } else {
-                $reactions.transition("confirm_booking")
-            }
-
-    state: ask_phone
-        q: * @Phone *
-        script:
-            $session.bookingData.phone = $parseTree._phone
-            if (!$session.bookingData.name) {
-                $reactions.transition("ask_name")
-            } else if (!$session.bookingData.brand) {
-                $reactions.transition("ask_car_brand")
-            } else {
-                $reactions.transition("confirm_booking")
-            }
-
-    state: ask_car_brand
-        q: * @CarBrand *
-        script:
-            $session.bookingData.brand = $parseTree._brand
+state: service_booking
+    q: q:service_booking
+    script:
+        var name = $parseTree._name
+        var phone = $parseTree._phone  
+        var brand = $parseTree._brand
+        
+        if (name) {
+            name = normalizeName(name)
+            $session.bookingData.name = name
+        }
+        if (phone) {
+            phone = normalizePhone(phone)
+            $session.bookingData.phone = phone
+        }
+        if (brand) {
+            brand = normalizeCarBrand(brand)
+            $session.bookingData.brand = brand
+        }
+        
+        var params = 0
+        if ($session.bookingData.name) params++
+        if ($session.bookingData.phone) params++
+        if ($session.bookingData.brand) params++
+        
+        if (params >= 2) {
+            $reactions.transition("confirm_booking")
+        } else {
             if (!$session.bookingData.name) {
                 $reactions.transition("ask_name")
             } else if (!$session.bookingData.phone) {
                 $reactions.transition("ask_phone")
-            } else {
+            } else if (!$session.bookingData.brand) {
+                $reactions.transition("ask_car_brand")
+            }
+        }
+
+state: ask_name
+    q: * @FullName *
+    a: Как вас зовут?
+    script:
+        if ($parseTree._name) {
+            $session.bookingData.name = normalizeName($parseTree._name)
+            if ($session.bookingData.phone && $session.bookingData.brand) {
                 $reactions.transition("confirm_booking")
+            } else if (!$session.bookingData.phone) {
+                $reactions.transition("ask_phone")
+            } else {
+                $reactions.transition("ask_car_brand")
             }
+        }
 
-    state: confirm_booking
-        a: Подтвердите данные для записи: Имя {{ $session.bookingData.name }}, Телефон {{ $session.bookingData.phone }}, Автомобиль {{ $session.bookingData.brand }}. Все верно?
-
-    state: process_confirmation
-        q: * @Confirmation *
-        script:
-            $reactions.transition("send_booking_request")
-
-    state: send_booking_request
-    httpAction:
-        url: "https://your-ngrok-url.ngrok.io/api/booking"
-        method: "POST"
-        body: >
-            {
-                "userId": "{{ $session.userId || 'anonymous' }}",
-                "name": "{{ $session.bookingData.name }}",
-                "phone": "{{ $session.bookingData.phone }}",
-                "carBrand": "{{ $session.bookingData.brand }}",
-                "timestamp": "{{ new Date().toISOString() }}"
+state: ask_phone
+    q: * @Phone *
+    a: Укажите ваш номер телефона
+    script:
+        if ($parseTree._phone) {
+            $session.bookingData.phone = normalizePhone($parseTree._phone)
+            if ($session.bookingData.name && $session.bookingData.brand) {
+                $reactions.transition("confirm_booking")
+            } else if (!$session.bookingData.name) {
+                $reactions.transition("ask_name")
+            } else {
+                $reactions.transition("ask_car_brand")
             }
-        headers:
-            Content-Type: "application/json"
-        success:
-            script:
-                var response = JSON.parse($httpResponse)
-                if (response.success) {
-                    $session.lastBookingId = response.bookingId
-                    $reactions.transition("booking_success")
-                } else {
-                    $reactions.transition("error_handling")
-                }
-        error:
-            $reactions.transition("error_handling")
+        }
 
-    state: booking_success
-        a: Заявка успешно оформлена! Номер заявки {{ $session.lastBookingId }}
+state: ask_car_brand
+    q: * @CarBrand *
+    a: Какая марка вашего автомобиля?
+    script:
+        if ($parseTree._brand) {
+            $session.bookingData.brand = normalizeCarBrand($parseTree._brand)
+            if ($session.bookingData.name && $session.bookingData.phone) {
+                $reactions.transition("confirm_booking")
+            } else if (!$session.bookingData.name) {
+                $reactions.transition("ask_name")
+            } else {
+                $reactions.transition("ask_phone")
+            }
+        }
 
-    state: error_handling
-        a: Извините, произошла ошибка. Попробуйте еще раз.
+state: confirm_booking
+    a: Подтвердите данные для записи на техобслуживание:\n📝 Имя: {{ $session.bookingData.name }}\n📞 Телефон: {{ $session.bookingData.phone }}\n🚗 Автомобиль: {{ $session.bookingData.brand }}\n\nВсе верно? (да/нет)
 
-    state: view_bookings
+state: process_confirmation
+    q: * @Confirmation *
+    script:
+        var bookingId = "BK" + (++$global.bookingCounter)
+        
+        var booking = {
+            id: bookingId,
+            userId: $session.userId || "anonymous",
+            name: $session.bookingData.name,
+            phone: $session.bookingData.phone,
+            brand: $session.bookingData.brand,
+            status: "New",
+            createdAt: new Date().toISOString(),
+            confirmedAt: new Date().toISOString()
+        }
+        
+        var validation = validateBookingData(booking)
+        if (!validation.isValid) {
+            $reactions.answer("Ошибка в данных: " + validation.errors.join(", "))
+            return
+        }
+        
+        $global.bookings.push(booking)
+        $session.lastBookingId = bookingId
+        
+        $reactions.answer("✅ Заявка успешно оформлена!\n📋 Номер заявки: " + bookingId + "\n⏰ Наш сотрудник свяжется с вами в течение 30 минут для уточнения времени.")
+
+state: process_negation
+    q: * @Negation *
+    a: Хорошо, давайте уточним данные. Что нужно изменить?
+    script:
+        $session.bookingData = {}
+        $reactions.transition("service_booking")
+
+state: view_bookings
     q: * (мои заявки|посмотреть заявки|статус заявки|мои записи) *
-    httpAction:
-        url: "https://your-ngrok-url.ngrok.io/api/booking/user/{{ $session.userId || 'anonymous' }}"
-        method: "GET"
-        headers:
-            Content-Type: "application/json"
-        success:
-            script:
-                var bookings = JSON.parse($httpResponse)
-                if (bookings.length === 0) {
-                    $reactions.answer("У вас пока нет активных заявок.")
-                } else {
-                    var message = "Ваши заявки: "
-                    for (var i = 0; i < bookings.length; i++) {
-                        var booking = bookings[i]
-                        message += "ID: " + booking.id + ", " + booking.carBrand + ", " + booking.status + ". "
-                    }
-                    $reactions.answer(message)
-                }
-        error:
-            $reactions.answer("Не удалось загрузить заявки.")
+    script:
+        var userId = $session.userId || "anonymous"
+        var userBookings = []
+        
+        for (var i = 0; i < $global.bookings.length; i++) {
+            if ($global.bookings[i].userId === userId) {
+                userBookings.push($global.bookings[i])
+            }
+        }
+        
+        if (userBookings.length === 0) {
+            $reactions.answer("У вас пока нет активных заявок.")
+        } else {
+            var message = "📋 Ваши заявки:\n\n"
+            for (var j = 0; j < userBookings.length; j++) {
+                var booking = userBookings[j]
+                message += "🆔 " + booking.id + "\n"
+                message += "🚗 " + booking.brand + "\n"
+                message += "📊 Статус: " + booking.status + "\n"
+                message += "📅 Создано: " + formatDate(booking.createdAt) + "\n\n"
+            }
+            $reactions.answer(message)
+        }
 
-    state: default
-        a: Извините, не понял. Могу записать на ТО или показать заявки.
+state: default
+    a: Извините, не понял ваш запрос. Я могу:\n• 📝 Записать на техобслуживание\n• 📋 Показать ваши заявки\n• ⏰ Рассказать о часах работы\n• 💰 Сообщить цены
+
+function normalizePhone(raw) {
+    if (!raw) return raw
+    
+    var digits = raw.replace(/\D/g, '')
+    
+    if (digits.length === 10) return "+7" + digits
+    if (digits.length === 11 && digits.charAt(0) === "8") return "+7" + digits.substring(1)
+    if (digits.length === 11 && digits.charAt(0) === "7") return "+" + digits
+    if (digits.length > 11) return "+" + digits
+    
+    return digits
+}
+
+function normalizeName(raw) {
+    if (!raw) return raw
+    
+    var parts = raw.trim().split(/\s+/)
+    for (var i = 0; i < parts.length; i++) {
+        var p = parts[i].toLowerCase()
+        parts[i] = p.charAt(0).toUpperCase() + p.substring(1)
+    }
+    
+    return parts.join(" ")
+}
+
+function normalizeCarBrand(raw) {
+    if (!raw) return raw
+    
+    var brandMap = {
+        "шкода": "Skoda",
+        "лада": "Lada", 
+        "тойота": "Toyota",
+        "киа": "KIA",
+        "хендай": "Hyundai",
+        "фольксваген": "Volkswagen",
+        "бмв": "BMW",
+        "мерседес": "Mercedes",
+        "ауди": "Audi",
+        "форд": "Ford",
+        "шевроле": "Chevrolet",
+        "ниссан": "Nissan",
+        "мазда": "Mazda",
+        "хонда": "Honda",
+        "рено": "Renault",
+        "пежо": "Peugeot",
+        "ситроен": "Citroen",
+        "опель": "Opel",
+        "вольво": "Volvo",
+        "лексус": "Lexus",
+        "инфинити": "Infiniti",
+        "акура": "Acura",
+        "субару": "Subaru",
+        "мицубиси": "Mitsubishi",
+        "сузуки": "Suzuki"
+    }
+    
+    var normalized = brandMap[raw.toLowerCase()]
+    return normalized || raw.charAt(0).toUpperCase() + raw.substring(1).toLowerCase()
+}
+
+function validateBookingData(booking) {
+    var errors = []
+    
+    if (!booking.name || booking.name.length < 2) {
+        errors.push("Некорректное имя")
+    }
+    
+    if (!booking.phone || booking.phone.length < 10) {
+        errors.push("Некорректный номер телефона")
+    }
+    
+    if (!booking.brand || booking.brand.length < 2) {
+        errors.push("Некорректная марка автомобиля")
+    }
+    
+    return {
+        isValid: errors.length === 0,
+        errors: errors
+    }
+}
+
+function formatDate(isoString) {
+    var date = new Date(isoString)
+    return date.toLocaleDateString("ru-RU") + " " + date.toLocaleTimeString("ru-RU", {hour: '2-digit', minute:'2-digit'})
+}
