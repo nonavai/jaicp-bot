@@ -95,22 +95,30 @@ theme: /
             $reactions.transition("send_booking_request")
 
     state: send_booking_request
-        script:
-            var bookingId = 'BK' + Date.now()
-            var booking = {
-                id: bookingId,
-                userId: $session.userId || 'anonymous',
-                name: $session.bookingData.name,
-                phone: $session.bookingData.phone,
-                brand: $session.bookingData.brand,
-                status: 'new',
-                createdAt: new Date().toISOString(),
-                confirmedAt: null,
-                processedAt: null
+    httpAction:
+        url: "https://your-ngrok-url.ngrok.io/api/booking"
+        method: "POST"
+        body: >
+            {
+                "userId": "{{ $session.userId || 'anonymous' }}",
+                "name": "{{ $session.bookingData.name }}",
+                "phone": "{{ $session.bookingData.phone }}",
+                "carBrand": "{{ $session.bookingData.brand }}",
+                "timestamp": "{{ new Date().toISOString() }}"
             }
-            $global.bookings.push(booking)
-            $session.lastBookingId = bookingId
-            $reactions.transition("booking_success")
+        headers:
+            Content-Type: "application/json"
+        success:
+            script:
+                var response = JSON.parse($httpResponse)
+                if (response.success) {
+                    $session.lastBookingId = response.bookingId
+                    $reactions.transition("booking_success")
+                } else {
+                    $reactions.transition("error_handling")
+                }
+        error:
+            $reactions.transition("error_handling")
 
     state: booking_success
         a: Заявка успешно оформлена! Номер заявки {{ $session.lastBookingId }}
@@ -119,27 +127,27 @@ theme: /
         a: Извините, произошла ошибка. Попробуйте еще раз.
 
     state: view_bookings
-        q: * (мои заявки|посмотреть заявки|статус заявки|мои записи) *
-        script:
-            if (!$global.bookings) {
-                $global.bookings = []
-            }
-            var userBookings = []
-            for (var i = 0; i < $global.bookings.length; i++) {
-                if ($global.bookings[i].userId === ($session.userId || 'anonymous')) {
-                    userBookings.push($global.bookings[i])
+    q: * (мои заявки|посмотреть заявки|статус заявки|мои записи) *
+    httpAction:
+        url: "https://your-ngrok-url.ngrok.io/api/booking/user/{{ $session.userId || 'anonymous' }}"
+        method: "GET"
+        headers:
+            Content-Type: "application/json"
+        success:
+            script:
+                var bookings = JSON.parse($httpResponse)
+                if (bookings.length === 0) {
+                    $reactions.answer("У вас пока нет активных заявок.")
+                } else {
+                    var message = "Ваши заявки: "
+                    for (var i = 0; i < bookings.length; i++) {
+                        var booking = bookings[i]
+                        message += "ID: " + booking.id + ", " + booking.carBrand + ", " + booking.status + ". "
+                    }
+                    $reactions.answer(message)
                 }
-            }
-            if (userBookings.length === 0) {
-                $reactions.answer("У вас пока нет активных заявок.")
-            } else {
-                var message = "Ваши заявки: "
-                for (var j = 0; j < userBookings.length; j++) {
-                    var booking = userBookings[j]
-                    message += "ID: " + booking.id + ", " + booking.brand + ", " + booking.status + ". "
-                }
-                $reactions.answer(message)
-            }
+        error:
+            $reactions.answer("Не удалось загрузить заявки.")
 
     state: default
         a: Извините, не понял. Могу записать на ТО или показать заявки.

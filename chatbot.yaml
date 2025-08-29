@@ -34,7 +34,12 @@ bot:
   service: "Автосервис"
   description: "Чат-бот для записи на техобслуживание и получения информации об услугах"
   
-# Интеграция отключена - используем встроенное хранение JAICP
-# integration:
-#   webhook:
-#     enabled: false
+# Интеграция с C# API через webhook
+integration:
+  webhook:
+    enabled: true
+    url: "https://your-ngrok-url.ngrok.io/api/booking"
+    timeout: 30
+    retries: 3
+    headers:
+      Content-Type: "application/json"
