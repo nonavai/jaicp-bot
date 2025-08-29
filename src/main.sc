@@ -101,113 +101,100 @@ theme: /
             }
 
     state: greeting
-        q: * (привет|здравствуйте|добрый день|доброе утро|добрый вечер|здравствуй) *
-        q: * (начать|помощь|старт) *
+        q: * привет *
+        q: * здравствуйте *
+        q: * добрый *
+        q: * начать *
+        q: * помощь *
         a: Здравствуйте! Добро пожаловать в автосервис АвтоПрофи! Я помогу записаться на техобслуживание.
         script:
             $session.bookingData = {}
 
     state: farewell  
-        q: * (пока|до свидания|спасибо|увидимся) *
+        q: * пока *
+        q: * спасибо *
+        q: * свидания *
         a: Спасибо за обращение! До свидания!
 
     state: working_hours
-        q: * (часы работы|время работы|когда работаете|расписание) *
+        q: * часы *
+        q: * время *
+        q: * работаете *
+        q: * расписание *
         a: Часы работы автосервиса АвтоПрофи: Понедельник-Пятница 8:00-20:00, Суббота 9:00-18:00. Воскресенье - выходной.
 
     state: price_inquiry
-        q: * (цены|стоимость|сколько стоит|тариф|расценки) *
+        q: * цены *
+        q: * стоимость *
+        q: * сколько *
+        q: * тариф *
         a: Цены на техобслуживание: Компактные автомобили от 2500 руб, Среднеразмерные от 3500 руб, Полноразмерные от 4500 руб.
 
     state: service_booking
-        q: * (записаться|запись|хочу записаться|нужно ТО|техобслуживание|попасть на ТО|как записаться) *
-        q: * (диагностика|ремонт|сервис|обслуживание) *
+        q: * записаться *
+        q: * запись *
+        q: * ТО *
+        q: * техобслуживание *
+        q: * попасть *
+        q: * записать *
+        q: * диагностика *
+        q: * ремонт *
+        q: * сервис *
+        q: * обслуживание *
         a: Хорошо! Давайте оформим запись на техобслуживание. Укажите ваше имя, телефон и марку автомобиля.
         script:
-            var name = $parseTree._name
-            var phone = $parseTree._phone  
-            var brand = $parseTree._brand
-            
-            if (name) {
-                name = normalizeName(name)
-                $session.bookingData.name = name
-            }
-            if (phone) {
-                phone = normalizePhone(phone)
-                $session.bookingData.phone = phone
-            }
-            if (brand) {
-                brand = normalizeCarBrand(brand)
-                $session.bookingData.brand = brand
-            }
-            
-            var params = 0
-            if ($session.bookingData.name) params++
-            if ($session.bookingData.phone) params++
-            if ($session.bookingData.brand) params++
-            
-            if (params >= 2) {
-                $reactions.transition("confirm_booking")
-            } else {
-                if (!$session.bookingData.name) {
-                    $reactions.transition("ask_name")
-                } else if (!$session.bookingData.phone) {
-                    $reactions.transition("ask_phone")
-                } else if (!$session.bookingData.brand) {
-                    $reactions.transition("ask_car_brand")
-                }
-            }
+            $session.bookingData = {}
+            $reactions.transition("ask_name")
 
     state: ask_name
-        q: * @FullName *
         a: Как вас зовут?
         script:
-            if ($parseTree._name) {
-                $session.bookingData.name = normalizeName($parseTree._name)
-                if ($session.bookingData.phone && $session.bookingData.brand) {
-                    $reactions.transition("confirm_booking")
-                } else if (!$session.bookingData.phone) {
+            // Собираем имя из входящего сообщения
+            var text = $request.query
+            if (text && text.length > 2) {
+                // Простая проверка на имя (буквы и пробелы)
+                if (/^[А-Яа-яA-Za-z\s]+$/.test(text)) {
+                    $session.bookingData.name = normalizeName(text)
                     $reactions.transition("ask_phone")
-                } else {
-                    $reactions.transition("ask_car_brand")
+                    return
                 }
             }
+            $reactions.answer("Пожалуйста, введите ваше полное имя (например: Иван Петров)")
 
     state: ask_phone
-        q: * @Phone *
         a: Укажите ваш номер телефона
         script:
-            if ($parseTree._phone) {
-                $session.bookingData.phone = normalizePhone($parseTree._phone)
-                if ($session.bookingData.name && $session.bookingData.brand) {
-                    $reactions.transition("confirm_booking")
-                } else if (!$session.bookingData.name) {
-                    $reactions.transition("ask_name")
-                } else {
+            var text = $request.query
+            if (text && text.length > 6) {
+                // Проверяем есть ли цифры в тексте
+                if (/\d/.test(text)) {
+                    $session.bookingData.phone = normalizePhone(text)
                     $reactions.transition("ask_car_brand")
+                    return
                 }
             }
+            $reactions.answer("Пожалуйста, введите номер телефона (например: 8-999-123-45-67)")
 
     state: ask_car_brand
-        q: * @CarBrand *
         a: Какая марка вашего автомобиля?
         script:
-            if ($parseTree._brand) {
-                $session.bookingData.brand = normalizeCarBrand($parseTree._brand)
-                if ($session.bookingData.name && $session.bookingData.phone) {
-                    $reactions.transition("confirm_booking")
-                } else if (!$session.bookingData.name) {
-                    $reactions.transition("ask_name")
-                } else {
-                    $reactions.transition("ask_phone")
-                }
+            var text = $request.query
+            if (text && text.length > 1) {
+                $session.bookingData.brand = normalizeCarBrand(text)
+                $reactions.transition("confirm_booking")
+                return
             }
+            $reactions.answer("Пожалуйста, введите марку автомобиля (например: Toyota)")
 
     state: confirm_booking
-        a: Подтвердите данные для записи на техобслуживание:\n📝 Имя: {{ $session.bookingData.name }}\n📞 Телефон: {{ $session.bookingData.phone }}\n🚗 Автомобиль: {{ $session.bookingData.brand }}\n\nВсе верно? (да/нет)
+        a: Подтвердите данные для записи на техобслуживание:\n📝 Имя: {{ $session.bookingData.name }}\n📞 Телефон: {{ $session.bookingData.phone }}\n🚗 Автомобиль: {{ $session.bookingData.brand }}\n\nВсе верно? Напишите "да" для подтверждения или "нет" для изменения.
 
     state: process_confirmation
-        q: * (да|конечно|верно|правильно|ага|точно) *
+        q: * да *
+        q: * конечно *
+        q: * верно *
+        q: * правильно *
+        q: * ага *
         script:
             var bookingId = "BK" + (++$global.bookingCounter)
             
@@ -234,14 +221,20 @@ theme: /
             $reactions.answer("✅ Заявка успешно оформлена!\n📋 Номер заявки: " + bookingId + "\n⏰ Наш сотрудник свяжется с вами в течение 30 минут для уточнения времени.")
 
     state: process_negation
-        q: * (нет|не|неправильно|неверно|ошибка) *
+        q: * нет *
+        q: * не *
+        q: * неправильно *
+        q: * ошибка *
         a: Хорошо, давайте уточним данные. Что нужно изменить?
         script:
             $session.bookingData = {}
             $reactions.transition("service_booking")
 
     state: view_bookings
-        q: * (мои заявки|посмотреть заявки|статус заявки|мои записи|показать заявки) *
+        q: * заявки *
+        q: * записи *
+        q: * статус *
+        q: * показать *
         script:
             var userId = $session.userId || "anonymous"
             var userBookings = []
@@ -267,4 +260,5 @@ theme: /
             }
 
     state: default
-        a: Извините, не понял ваш запрос. Я могу:\n• 📝 Записать на техобслуживание\n• 📋 Показать ваши заявки\n• ⏰ Рассказать о часах работы\n• 💰 Сообщить цены
+        event: noMatch
+        a: Извините, не понял ваш запрос. Попробуйте:\n• "записаться" - для записи на ТО\n• "цены" - узнать стоимость\n• "часы" - время работы\n• "заявки" - посмотреть записи
