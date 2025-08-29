@@ -1,54 +1,6 @@
-state: greeting
-    q: q:greeting
-    a: Здравствуйте! Чем могу помочь?
+state: Start
+    a: Добро пожаловать в автосервис АвтоПрофи!
 
-state: farewell
-    q: q:farewell
-    a: До свидания!
-
-state: working_hours
-    q: q:working_hours
-    a: Часы работы: Пн-Пт 8:00-20:00
-
-state: price_inquiry
-    q: q:price_inquiry
-    a: Цены от 2500₽
-
-state: service_booking
-    q: q:service_booking
-    a: Начинаю запись...
-
-state: ask_name
-    q: * @FullName *
-    a: Спасибо!
-
-state: ask_phone
-    q: * @Phone *
-    a: Отлично!
-
-state: ask_car_brand
-    q: * @CarBrand *
-    a: Хорошо!
-
-state: confirm_booking
-    a: Подтвердите данные...
-
-state: process_confirmation
-    q: * @Confirmation *
-    a: Обрабатываю...
-
-state: send_booking_request
-    a: Сохраняю...
-
-state: booking_success
-    a: Готово!
-
-state: error_handling
-    a: Ошибка!
-
-state: view_bookings
-    q: * (мои заявки|посмотреть заявки|статус заявки|мои записи) *
-    a: Показываю заявки...
-
-state: default
-    a: Не понял. Могу записать на ТО или показать заявки.
+state: CatchAll
+    event: noMatch
+    a: Извините, не понял. Могу записать на ТО или показать заявки.
