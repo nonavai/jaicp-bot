@@ -100,6 +100,25 @@ theme: /
                 return date.toLocaleDateString("ru-RU") + " " + date.toLocaleTimeString("ru-RU", {hour: '2-digit', minute:'2-digit'})
             }
             
+            // Нормализация входного текста: приведение к нижнему регистру,
+            // замена латинских аналогов на кириллицу, чистка пробелов
+            function normalizeInput(rawText) {
+                if (!rawText) return ""
+                var text = ("" + rawText).toLowerCase()
+                // Замена наиболее частых латинских букв, похожих на кириллицу
+                var map = {
+                    'a':'а','b':'в','c':'с','e':'е','h':'н','k':'к','m':'м','o':'о','p':'р','r':'г','s':'ѕ','t':'т','x':'х','y':'у'
+                }
+                var result = ""
+                for (var i = 0; i < text.length; i++) {
+                    var ch = text.charAt(i)
+                    result += (map[ch] || ch)
+                }
+                // Убираем повторяющиеся пробелы
+                result = result.replace(/\s+/g, ' ').trim()
+                return result
+            }
+
             // Функция анализа сложных предложений
             function analyzeComplexSentence(text) {
                 var lowerText = text.toLowerCase()
@@ -175,18 +194,18 @@ theme: /
             }
 
     state: debug_booking
-        q: записаться
-        q: ТО
-        q: СТО  
-        q: запиши
-        q: записать
+        q!: записаться
+        q!: записать
+        q!: запиши
+        q!: ТО
+        q!: СТО  
         q: запись
         q: * срочно *
-        q: * срочно записаться *
+        q!: * срочно записаться *
         q: * срочно нужно *
         q: * срочно запиши *
-        q: * на ТО *
-        q: * на СТО *
+        q!: * на ТО *
+        q!: * на СТО *
         q: * как попасть *
         q: * попасть на ТО *
         q: * попасть на СТО *
@@ -308,6 +327,7 @@ theme: /
         script:
             // Используем настоящее ИИ JAICP для классификации намерений
             var userText = $request.query
+            var normalized = normalizeInput(userText)
             
             // Классифицируем намерение через ИИ
             var intentRequest = {
@@ -386,8 +406,14 @@ theme: /
                 // Если ИИ недоступно, используем простой анализ
             }
             
-            // Fallback: простой анализ ключевых слов
-            var text = userText.toLowerCase()
+            // Fallback: простой анализ ключевых слов (на нормализованном тексте)
+            var text = normalized
+            // Специальная обработка очень коротких триггеров
+            if (text === 'то' || text === 'сто' || text === 'т') {
+                $session.bookingData = {}
+                $reactions.transition("ask_name")
+                return
+            }
             if (text.indexOf("записать") !== -1 || text.indexOf("запись") !== -1 || 
                 text.indexOf("то") !== -1 || text.indexOf("сервис") !== -1 ||
                 text.indexOf("ремонт") !== -1 || text.indexOf("запиши") !== -1) {
