@@ -1,104 +1,6 @@
 theme: /
 
-init:
-    script:
-        if (!$global.bookings) {
-            $global.bookings = []
-        }
-        if (!$global.bookingCounter) {
-            $global.bookingCounter = 1000
-        }
-        
-        // Функция нормализации телефона
-        function normalizePhone(raw) {
-            if (!raw) return raw
-            
-            var digits = raw.replace(/\D/g, '')
-            
-            if (digits.length === 10) return "+7" + digits
-            if (digits.length === 11 && digits.charAt(0) === "8") return "+7" + digits.substring(1)
-            if (digits.length === 11 && digits.charAt(0) === "7") return "+" + digits
-            if (digits.length > 11) return "+" + digits
-            
-            return digits
-        }
-        
-        // Функция нормализации имени
-        function normalizeName(raw) {
-            if (!raw) return raw
-            
-            var parts = raw.trim().split(/\s+/)
-            for (var i = 0; i < parts.length; i++) {
-                var p = parts[i].toLowerCase()
-                parts[i] = p.charAt(0).toUpperCase() + p.substring(1)
-            }
-            
-            return parts.join(" ")
-        }
-        
-        // Функция нормализации марки автомобиля
-        function normalizeCarBrand(raw) {
-            if (!raw) return raw
-            
-            var brandMap = {
-                "шкода": "Skoda",
-                "лада": "Lada", 
-                "тойота": "Toyota",
-                "киа": "KIA",
-                "хендай": "Hyundai",
-                "фольксваген": "Volkswagen",
-                "бмв": "BMW",
-                "мерседес": "Mercedes",
-                "ауди": "Audi",
-                "форд": "Ford",
-                "шевроле": "Chevrolet",
-                "ниссан": "Nissan",
-                "мазда": "Mazda",
-                "хонда": "Honda",
-                "рено": "Renault",
-                "пежо": "Peugeot",
-                "ситроен": "Citroen",
-                "опель": "Opel",
-                "вольво": "Volvo",
-                "лексус": "Lexus",
-                "инфинити": "Infiniti",
-                "акура": "Acura",
-                "субару": "Subaru",
-                "мицубиси": "Mitsubishi",
-                "сузуки": "Suzuki"
-            }
-            
-            var normalized = brandMap[raw.toLowerCase()]
-            return normalized || raw.charAt(0).toUpperCase() + raw.substring(1).toLowerCase()
-        }
-        
-        // Функция валидации данных заявки
-        function validateBookingData(booking) {
-            var errors = []
-            
-            if (!booking.name || booking.name.length < 2) {
-                errors.push("Некорректное имя")
-            }
-            
-            if (!booking.phone || booking.phone.length < 10) {
-                errors.push("Некорректный номер телефона")
-            }
-            
-            if (!booking.brand || booking.brand.length < 2) {
-                errors.push("Некорректная марка автомобиля")
-            }
-            
-            return {
-                isValid: errors.length === 0,
-                errors: errors
-            }
-        }
-        
-        // Функция форматирования даты
-        function formatDate(isoString) {
-            var date = new Date(isoString)
-            return date.toLocaleDateString("ru-RU") + " " + date.toLocaleTimeString("ru-RU", {hour: '2-digit', minute:'2-digit'})
-        }
+
 
     state: greeting
         q: q:greeting
@@ -265,3 +167,103 @@ init:
 
     state: default
         a: Извините, не понял ваш запрос. Я могу:\n• 📝 Записать на техобслуживание\n• 📋 Показать ваши заявки\n• ⏰ Рассказать о часах работы\n• 💰 Сообщить цены
+
+init:
+    script:
+        if (!$global.bookings) {
+            $global.bookings = []
+        }
+        if (!$global.bookingCounter) {
+            $global.bookingCounter = 1000
+        }
+        
+        // Функция нормализации телефона
+        function normalizePhone(raw) {
+            if (!raw) return raw
+            
+            var digits = raw.replace(/\D/g, '')
+            
+            if (digits.length === 10) return "+7" + digits
+            if (digits.length === 11 && digits.charAt(0) === "8") return "+7" + digits.substring(1)
+            if (digits.length === 11 && digits.charAt(0) === "7") return "+" + digits
+            if (digits.length > 11) return "+" + digits
+            
+            return digits
+        }
+        
+        // Функция нормализации имени
+        function normalizeName(raw) {
+            if (!raw) return raw
+            
+            var parts = raw.trim().split(/\s+/)
+            for (var i = 0; i < parts.length; i++) {
+                var p = parts[i].toLowerCase()
+                parts[i] = p.charAt(0).toUpperCase() + p.substring(1)
+            }
+            
+            return parts.join(" ")
+        }
+        
+        // Функция нормализации марки автомобиля
+        function normalizeCarBrand(raw) {
+            if (!raw) return raw
+            
+            var brandMap = {
+                "шкода": "Skoda",
+                "лада": "Lada", 
+                "тойота": "Toyota",
+                "киа": "KIA",
+                "хендай": "Hyundai",
+                "фольксваген": "Volkswagen",
+                "бмв": "BMW",
+                "мерседес": "Mercedes",
+                "ауди": "Audi",
+                "форд": "Ford",
+                "шевроле": "Chevrolet",
+                "ниссан": "Nissan",
+                "мазда": "Mazda",
+                "хонда": "Honda",
+                "рено": "Renault",
+                "пежо": "Peugeot",
+                "ситроен": "Citroen",
+                "опель": "Opel",
+                "вольво": "Volvo",
+                "лексус": "Lexus",
+                "инфинити": "Infiniti",
+                "акура": "Acura",
+                "субару": "Subaru",
+                "мицубиси": "Mitsubishi",
+                "сузуки": "Suzuki"
+            }
+            
+            var normalized = brandMap[raw.toLowerCase()]
+            return normalized || raw.charAt(0).toUpperCase() + raw.substring(1).toLowerCase()
+        }
+        
+        // Функция валидации данных заявки
+        function validateBookingData(booking) {
+            var errors = []
+            
+            if (!booking.name || booking.name.length < 2) {
+                errors.push("Некорректное имя")
+            }
+            
+            if (!booking.phone || booking.phone.length < 10) {
+                errors.push("Некорректный номер телефона")
+            }
+            
+            if (!booking.brand || booking.brand.length < 2) {
+                errors.push("Некорректная марка автомобиля")
+            }
+            
+            return {
+                isValid: errors.length === 0,
+                errors: errors
+            }
+        }
+        
+        // Функция форматирования даты
+        function formatDate(isoString) {
+            var date = new Date(isoString)
+            return date.toLocaleDateString("ru-RU") + " " + date.toLocaleTimeString("ru-RU", {hour: '2-digit', minute:'2-digit'})
+        }
