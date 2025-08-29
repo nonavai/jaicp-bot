@@ -2,7 +2,7 @@ theme: /
 
 state: greeting
     q: q:greeting
-    a: Здравствуйте! Добро пожаловать в автосервис "АвтоПрофи"!
+    a: Здравствуйте! Добро пожаловать в автосервис АвтоПрофи!
     script:
         $session.bookingData = {}
         if (!$global.bookings) {
@@ -11,15 +11,15 @@ state: greeting
 
 state: farewell
     q: q:farewell
-    a: Спасибо за обращение в автосервис "АвтоПрофи"! До свидания!
+    a: Спасибо за обращение! До свидания!
 
 state: working_hours
     q: q:working_hours
-    a: Часы работы автосервиса "АвтоПрофи": Понедельник-Пятница 8:00-20:00
+    a: Часы работы: Понедельник-Пятница 8:00-20:00
 
 state: price_inquiry
     q: q:price_inquiry
-    a: Цены на услуги автосервиса "АвтоПрофи": Компактные автомобили от 2500₽
+    a: Цены: Компактные автомобили от 2500руб
 
 state: service_booking
     q: q:service_booking
@@ -87,7 +87,7 @@ state: ask_car_brand
         }
 
 state: confirm_booking
-    a: Подтвердите данные для записи на техобслуживание: Имя {{ $session.bookingData.name }}, Телефон {{ $session.bookingData.phone }}, Автомобиль {{ $session.bookingData.brand }}. Все верно?
+    a: Подтвердите данные для записи: Имя {{ $session.bookingData.name }}, Телефон {{ $session.bookingData.phone }}, Автомобиль {{ $session.bookingData.brand }}. Все верно?
 
 state: process_confirmation
     q: * @Confirmation *
@@ -113,7 +113,7 @@ state: send_booking_request
         $reactions.transition("booking_success")
 
 state: booking_success
-    a: ✅ Заявка успешно оформлена! Номер заявки {{ $session.lastBookingId }}
+    a: Заявка успешно оформлена! Номер заявки {{ $session.lastBookingId }}
 
 state: error_handling
     a: Извините, произошла ошибка. Попробуйте еще раз.
@@ -142,4 +142,4 @@ state: view_bookings
         }
 
 state: default
-    a: Извините, я не совсем понял. Я могу записать на ТО или показать ваши заявки.
+    a: Извините, не понял. Могу записать на ТО или показать заявки.
