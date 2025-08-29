@@ -99,6 +99,80 @@ theme: /
                 var date = new Date(isoString)
                 return date.toLocaleDateString("ru-RU") + " " + date.toLocaleTimeString("ru-RU", {hour: '2-digit', minute:'2-digit'})
             }
+            
+            // Функция анализа сложных предложений
+            function analyzeComplexSentence(text) {
+                var lowerText = text.toLowerCase()
+                
+                // Слова для записи на ТО
+                var bookingWords = ["записать", "запись", "записаться", "то", "техобслуживание", "сервис", "диагностика", "ремонт", "обслуживание", "машину", "автомобиль", "попасть", "нужно", "надо", "хочу", "срочно", "запишите"]
+                
+                // Слова для цен
+                var priceWords = ["цен", "стоимость", "сколько", "цена", "денег", "рублей", "платить", "оплата"]
+                
+                // Слова для времени
+                var timeWords = ["час", "время", "расписание", "график", "когда", "работает", "открыт"]
+                
+                // Слова для приветствия
+                var greetingWords = ["привет", "здравствуй", "добр", "салют", "хай", "hello"]
+                
+                var bookingScore = 0
+                var priceScore = 0 
+                var timeScore = 0
+                var greetingScore = 0
+                
+                // Подсчитываем совпадения
+                for (var i = 0; i < bookingWords.length; i++) {
+                    if (lowerText.indexOf(bookingWords[i]) !== -1) bookingScore++
+                }
+                for (var i = 0; i < priceWords.length; i++) {
+                    if (lowerText.indexOf(priceWords[i]) !== -1) priceScore++
+                }
+                for (var i = 0; i < timeWords.length; i++) {
+                    if (lowerText.indexOf(timeWords[i]) !== -1) timeScore++
+                }
+                for (var i = 0; i < greetingWords.length; i++) {
+                    if (lowerText.indexOf(greetingWords[i]) !== -1) greetingScore++
+                }
+                
+                // Определяем намерение
+                if (bookingScore > 0 && bookingScore >= priceScore && bookingScore >= timeScore) {
+                    return "booking"
+                }
+                if (priceScore > 0 && priceScore >= bookingScore && priceScore >= timeScore) {
+                    return "price"
+                }
+                if (timeScore > 0 && timeScore >= bookingScore && timeScore >= priceScore) {
+                    return "time"
+                }
+                if (greetingScore > 0) {
+                    return "greeting"
+                }
+                
+                return "unknown"
+            }
+            
+            // Функция семантического сравнения текстов
+            function calculateSimilarity(text1, text2) {
+                // Простая метрика сходства на основе общих слов
+                var words1 = text1.split(/\s+/)
+                var words2 = text2.split(/\s+/)
+                var commonWords = 0
+                var totalWords = Math.max(words1.length, words2.length)
+                
+                for (var i = 0; i < words1.length; i++) {
+                    if (words2.indexOf(words1[i]) !== -1) {
+                        commonWords++
+                    }
+                }
+                
+                // Также проверяем вхождения подстрок
+                if (text1.indexOf(text2) !== -1 || text2.indexOf(text1) !== -1) {
+                    return Math.max(0.5, commonWords / totalWords)
+                }
+                
+                return commonWords / totalWords
+            }
 
     state: greeting
         q: * привет *
@@ -120,9 +194,23 @@ theme: /
         q: * как дела *
         q: * что нового *
         q: * салют *
+        q: привет как записаться *
+        q: привет мне нужно *
+        q: привет хочу записаться *
+        q: здравствуйте как записаться *
+        q: здравствуйте мне нужно *
         a: Здравствуйте! Добро пожаловать в автосервис АвтоПрофи! Я помогу записаться на техобслуживание.
         script:
             $session.bookingData = {}
+            
+            // Анализируем, есть ли в приветствии запрос на запись
+            var text = $request.query.toLowerCase()
+            if (text.indexOf("записать") !== -1 || text.indexOf("запись") !== -1 || 
+                text.indexOf("нужно") !== -1 || text.indexOf("хочу") !== -1) {
+                $reactions.answer("Отлично! Помогу вам записаться на техобслуживание.")
+                $reactions.transition("ask_name")
+                return
+            }
 
     state: farewell  
         q: * пока *
@@ -193,6 +281,85 @@ theme: /
         q: * бюджет *
         a: Цены на техобслуживание: Компактные автомобили от 2500 руб, Среднеразмерные от 3500 руб, Полноразмерные от 4500 руб.
 
+    state: ai_analyzer
+        event: noMatch
+        script:
+            var text = $request.query
+            
+            // Используем встроенное ИИ JAICP для определения намерения
+            try {
+                // Семантический поиск по готовым шаблонам
+                var intents = [
+                    {intent: "booking", examples: ["записаться на ТО", "хочу на сервис", "нужна запись", "срочно запишите меня"]},
+                    {intent: "pricing", examples: ["сколько стоит", "цены на услуги", "во сколько обойдется"]},
+                    {intent: "schedule", examples: ["когда работаете", "часы работы", "расписание"]},
+                    {intent: "greeting", examples: ["привет", "здравствуйте", "добрый день"]}
+                ]
+                
+                // Находим наиболее похожее намерение
+                var bestMatch = null
+                var bestScore = 0
+                
+                for (var i = 0; i < intents.length; i++) {
+                    for (var j = 0; j < intents[i].examples.length; j++) {
+                        // Простое сравнение подстрок (в реальном JAICP используется более продвинутое ИИ)
+                        var similarity = calculateSimilarity(text.toLowerCase(), intents[i].examples[j].toLowerCase())
+                        if (similarity > bestScore) {
+                            bestScore = similarity
+                            bestMatch = intents[i].intent
+                        }
+                    }
+                }
+                
+                // Если уверенность высокая, переходим к соответствующему действию
+                if (bestScore > 0.3) {
+                    if (bestMatch === "booking") {
+                        $reactions.answer("Понял, вы хотите записаться на техобслуживание! Давайте оформим запись.")
+                        $session.bookingData = {}
+                        $reactions.transition("ask_name")
+                    } else if (bestMatch === "pricing") {
+                        $reactions.transition("price_inquiry")
+                    } else if (bestMatch === "schedule") {
+                        $reactions.transition("working_hours")
+                    } else if (bestMatch === "greeting") {
+                        $reactions.transition("greeting")
+                    }
+                } else {
+                    // Fallback на наш анализатор
+                    var intent = analyzeComplexSentence(text)
+                    
+                    if (intent === "booking") {
+                        $reactions.answer("Понял, вы хотите записаться на техобслуживание! Давайте оформим запись.")
+                        $session.bookingData = {}
+                        $reactions.transition("ask_name")
+                    } else if (intent === "price") {
+                        $reactions.transition("price_inquiry")
+                    } else if (intent === "time") {
+                        $reactions.transition("working_hours")
+                    } else if (intent === "greeting") {
+                        $reactions.transition("greeting")
+                    } else {
+                        $reactions.answer("Извините, не понял ваш запрос. Попробуйте:\n• \"записаться\" - для записи на ТО\n• \"цены\" - узнать стоимость\n• \"часы\" - время работы\n• \"помощь\" - показать все команды")
+                    }
+                }
+            } catch (e) {
+                // В случае ошибки используем fallback
+                var intent = analyzeComplexSentence(text)
+                if (intent !== "unknown") {
+                    if (intent === "booking") {
+                        $reactions.transition("service_booking")
+                    } else if (intent === "price") {
+                        $reactions.transition("price_inquiry")
+                    } else if (intent === "time") {
+                        $reactions.transition("working_hours")
+                    } else if (intent === "greeting") {
+                        $reactions.transition("greeting")
+                    }
+                } else {
+                    $reactions.answer("Извините, не понял ваш запрос. Попробуйте более простые команды.")
+                }
+            }
+
     state: service_booking
         q: * записаться *
         q: * запись *
@@ -234,6 +401,9 @@ theme: /
         q: * СТО *
         q: * станция технического обслуживания *
         q: * мастерская *
+        q: * срочно записать *
+        q: * срочно запишите *
+        q: * срочно нужно *
         a: Хорошо! Давайте оформим запись на техобслуживание. Укажите ваше имя, телефон и марку автомобиля.
         script:
             $session.bookingData = {}
@@ -464,6 +634,3 @@ theme: /
         q: * список услуг *
         a: Услуги автосервиса АвтоПрофи:\n🔧 Техническое обслуживание\n🛠 Диагностика\n🔩 Ремонт двигателя\n⚙️ Замена масла и фильтров\n🚗 Кузовной ремонт\n🛞 Шиномонтаж
 
-    state: default
-        event: noMatch
-        a: Извините, не понял ваш запрос. Попробуйте:\n• "записаться" - для записи на ТО\n• "цены" - узнать стоимость\n• "часы" - время работы\n• "заявки" - посмотреть записи\n• "помощь" - показать все команды\n• "услуги" - список наших работ\n• "адрес" - как нас найти\n• "контакты" - связаться с нами

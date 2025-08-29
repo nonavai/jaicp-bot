@@ -14,12 +14,19 @@ nlp:
     phrases: 0.2
     patterns: 0.2
   
-  # Настройки для правило-ориентированного подхода
-  classificationAlgorithm: "sts"
-  useShared: false
+  # Гибридный подход: правила + ИИ
+  classificationAlgorithm: "hybrid"
+  useShared: true
   
   # Включение пользовательских паттернов
   zflPatternsEnabled: true
+  
+  # ИИ для определения намерений
+  intentClassification: true
+  confidenceThreshold: 0.6
+  
+  # Семантический поиск
+  semanticSearch: true
   
   # Настройки валидации
   validation:
