@@ -10,41 +10,32 @@ tests:
     - test/test_scenarios.xml
 
 nlp:
-  # МАКСИМАЛЬНОЕ ИСПОЛЬЗОВАНИЕ ИИ JAICP
-  classificationAlgorithm: "ai"  # Чистое ИИ вместо гибрида
+  # РАБОЧИЙ ГИБРИДНЫЙ РЕЖИМ: Правила + ИИ
+  classificationAlgorithm: "hybrid"  # Сначала правила, потом ИИ
   useShared: true
   
-  # ИИ анализ намерений
-  intentClassification: true
-  confidenceThreshold: 0.3  # Понижен для большей чувствительности
-  
-  # Максимальный семантический поиск
-  semanticSearch: true
-  semanticThreshold: 0.2  # Понижен для лучшего понимания
-  
-  # Включаем все доступные ИИ функции
-  entityExtraction: true
-  sentimentAnalysis: true
-  languageDetection: true
-  
-  # Настройки для неопознанных запросов
+  # Настройки для правил (приоритет)
   intentNoMatchThresholds:
-    phrases: 0.1  # Очень низкий порог - почти все идет в ИИ
-    patterns: 0.1
+    phrases: 0.2
+    patterns: 0.2
   
-  # Пользовательские паттерны как fallback
+  # Пользовательские паттерны (основа)
   zflPatternsEnabled: true
   
-  # Обучение на лету
-  onlineLearning: true
-  adaptiveThreshold: true
+  # ИИ как помощник для сложных случаев
+  intentClassification: true
+  confidenceThreshold: 0.5
   
-  # Валидация ответов ИИ
+  # Семантический поиск для fallback
+  semanticSearch: true
+  semanticThreshold: 0.3
+  
+  # Простая валидация
   validation:
-    phraseValidationEnabled: true
+    phraseValidationEnabled: false  # Отключаем чтобы не мешало правилам
     answerValidationEnabled: true
-    phraseValidationThreshold: 0.3
-    answerValidationThreshold: 0.6
+    phraseValidationThreshold: 0.5
+    answerValidationThreshold: 0.7
 
 # ИИ обучение для автосервиса
 aiTraining:
